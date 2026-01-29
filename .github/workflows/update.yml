@@ -57,3 +57,8 @@ jobs:
             git commit -m "Update markets.json [skip ci]"
             git push
           fi
+      - name: Purge jsDelivr Cache
+        uses: gacts/purge-jsdelivr-cache@v1
+        with:
+          url: |
+            https://cdn.jsdelivr.net/gh/devpatel005/reality-check@main/output/markets.json
