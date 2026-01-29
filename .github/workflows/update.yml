@@ -1,0 +1,59 @@
+name: Update Markets Data
+
+on:
+  schedule:
+    # Run every hour at minute 0
+    - cron: '0 * * * *'
+  workflow_dispatch:
+    # Allow manual trigger from Actions tab
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Cache model files
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/torch
+            ~/.cache/huggingface
+          key: model-cache-${{ runner.os }}-v1
+          restore-keys: |
+            model-cache-${{ runner.os }}-
+      
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            pip-${{ runner.os }}-
+      
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      
+      - name: Run update script
+        run: python main.py
+      
+      - name: Commit and push changes
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add output/markets.json
+          
+          # Only commit if there are actual changes
+          if git diff --quiet --cached; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update markets.json [skip ci]"
+            git push
+          fi
